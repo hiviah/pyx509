@@ -30,7 +30,7 @@ from pyasn1 import error
 # local imports
 from tools import *
 from oid import oid_map as oid_map
-from pkcs7.asn1_models.general_types import  *
+from general_types import  *
          
 
 #RDNS sequence otagovana A4 (constructed octet string)
@@ -113,6 +113,7 @@ class ExtendedKeyUsage(univ.SequenceOf):
 class Statement(univ.Sequence):
     componentType = namedtype.NamedTypes(
                             namedtype.NamedType("stmtId", univ.ObjectIdentifier()),    
+                            namedtype.OptionalNamedType("stmtInfo", univ.Any()),
                                          )    
 
 class Statements(univ.SequenceOf):

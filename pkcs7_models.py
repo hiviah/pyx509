@@ -354,6 +354,9 @@ class QcStatementExt():
     '''
     def __init__(self, asn1_caStatement):
         self.oid = str(asn1_caStatement.getComponentByName("stmtId"))
+        self.statementInfo = asn1_caStatement.getComponentByName("stmtInfo")
+        if self.statementInfo is not None:
+            self.statementInfo = str(self.statementInfo)
         
 class Extension():
     '''
