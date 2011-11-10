@@ -59,8 +59,9 @@ class DirectoryString(univ.Choice):
         namedtype.NamedType('universalString', char.UniversalString()),
         namedtype.NamedType('utf8String', char.UTF8String()),
         namedtype.NamedType('bmpString', char.BMPString()),
-        namedtype.NamedType('ia5String', char.IA5String()),
-        namedtype.NamedType('gString', univ.OctetString())
+        namedtype.NamedType('ia5String', char.IA5String()), #for legacy pkcs9-email
+        #namedtype.NamedType('gString', univ.OctetString()),
+        namedtype.NamedType('bitString', univ.BitString()), #needed for X500 Unique Identifier, RFC 2256
         )
     def __repr__(self):
         try:
