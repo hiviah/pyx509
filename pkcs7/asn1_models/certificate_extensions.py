@@ -54,9 +54,8 @@ class BasicConstraints(univ.Sequence):
 
 class AnyQualifier(univ.Choice):
     componentType = namedtype.NamedTypes(
-                            namedtype.NamedType("t1", univ.Sequence()),
-                            namedtype.NamedType("t2", univ.Set()),                            
-                            namedtype.NamedType("t3", DirectoryString()),
+                            namedtype.NamedType("userNotice", univ.Sequence()),
+                            namedtype.NamedType("cpsUri", char.IA5String()), 
                                          )
     
 class PolicyQualifierInfo(univ.Sequence):

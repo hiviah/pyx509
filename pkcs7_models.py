@@ -254,18 +254,16 @@ class PolicyQualifier():
         self.id = tuple_to_OID(asn1_pQual.getComponentByName("policyQualifierId"))
         if asn1_pQual.getComponentByName("qualifier") is not None:
             qual = asn1_pQual.getComponentByName("qualifier")
-            # this is a choice - onky one of following types will be non-null
-            qaulifier = None
-            comp = qual.getComponentByName("t1")
+            self.qualifier = None
+            # this is a choice - only one of following types will be non-null
+            
+            comp = qual.getComponentByName("cpsUri")
             if comp is not None:
-                qaulifier = comp[0]
-            comp = qual.getComponentByName("t2")
-            if comp is not None:
-                qaulifier = comp[0]  
-            comp = qual.getComponentByName("t3")
-            if comp is not None:
-                qaulifier = comp
-            self.qualifier = str(qaulifier)
+                self.qualifier = str(comp)
+            # not parsing userNotice for now
+            #comp = qual.getComponentByName("userNotice")
+            #if comp is not None:
+            #    self.qualifier = comp
             
 class AuthorityInfoAccessExt():
     '''
