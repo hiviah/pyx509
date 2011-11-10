@@ -364,56 +364,34 @@ class Extension():
     - is_critical
     - value (value of extension, needs more parsing - it is in DER encoding)
     '''
+    #OID: (spec, valueConversionFunction)
+    _extensionDecoders = {
+        "2.5.29.17": (GeneralNames(),                   lambda v: SubjectAltNameExt(v)),
+        "2.5.29.35": (KeyId(),                          lambda v: AuthorityKeyIdExt(v)),
+        "2.5.29.14": (SubjectKeyId(),                   lambda v: SubjectKeyIdExt(v)),
+        "2.5.29.19": (BasicConstraints(),               lambda v: BasicConstraintsExt(v)),
+        "2.5.29.15": (None,                             lambda v: KeyUsageExt(v)),
+        "2.5.29.32": (CertificatePolicies(),            lambda v: [CertificatePolicyExt(p) for p in v]),
+        "2.5.29.31": (CRLDistributionPoints(),          lambda v: [CRLdistPointExt(p) for p in v]),
+        "1.3.6.1.5.5.7.1.3": (Statements(),             lambda v: [QcStatementExt(s) for s in v]),
+        "1.3.6.1.5.5.7.1.1": (AuthorityInfoAccess(),    lambda v: [AuthorityInfoAccessExt(s) for s in v]),
+        "2.5.29.37": (ExtendedKeyUsage(),               lambda v: ExtendedKeyUsageExt(v)),
+    }
+    
     def __init__(self, extension):
         self.id = tuple_to_OID(extension.getComponentByName("extnID"))
         critical = extension.getComponentByName("critical")
-        if critical == 0:
-            self.is_critical = False
-        else:
-            self.is_critical = True
+        self.is_critical = (critical != 0)
+        
         # set the bytes as the extension value
         self.value = extension.getComponentByName("extnValue")._value
+        
         # if we know the type of value, parse it
-        if (self.id == "2.5.29.17"):
-            v = decoder.decode(self.value, asn1Spec=GeneralNames())[0]
-            val = SubjectAltNameExt(v)
-            self.value = val
-        elif (self.id == "2.5.29.35"):            
-            v = decoder.decode(self.value, asn1Spec=KeyId())[0]
-            val = AuthorityKeyIdExt(v)
-            self.value = val
-        elif (self.id == "2.5.29.14"):            
-            v = decoder.decode(self.value, asn1Spec=SubjectKeyId())[0]
-            val = SubjectKeyIdExt(v)
-            self.value = val
-        elif (self.id == "2.5.29.19"):
-            v = decoder.decode(self.value, asn1Spec=BasicConstraints())[0]
-            val = BasicConstraintsExt(v)
-            self.value = val
-        elif (self.id == "2.5.29.15"):
-            v = decoder.decode(self.value)[0]
-            val = KeyUsageExt(v)
-            self.value = val
-        elif (self.id == "2.5.29.32"):
-            v = decoder.decode(self.value, asn1Spec=CertificatePolicies())[0]           
-            val = [CertificatePolicyExt(p) for p in v]
-            self.value = val
-        elif (self.id == "2.5.29.31"):            
-            v = decoder.decode(self.value, asn1Spec=CRLDistributionPoints())[0]         
-            val = [CRLdistPointExt(p) for p in v]
-            self.value = val
-        elif (self.id == "1.3.6.1.5.5.7.1.3"):            
-            v = decoder.decode(self.value, asn1Spec=Statements())[0]
-            val = [QcStatementExt(s) for s in v]
-            self.value = val
-        elif (self.id == "1.3.6.1.5.5.7.1.1"):
-            v = decoder.decode(self.value, asn1Spec=AuthorityInfoAccess())[0]
-            val = [AuthorityInfoAccessExt(s) for s in v]
-            self.value = val
-        elif (self.id == "2.5.29.37"):
-            v = decoder.decode(self.value, asn1Spec=ExtendedKeyUsage())[0]
-            val = ExtendedKeyUsageExt(v)
-            self.value = val
+        decoderTuple = Extension._extensionDecoders.get(self.id)
+        if decoderTuple is not None:
+            (decoderAsn1Spec, decoderFunction) = decoderTuple
+            v = decoder.decode(self.value, asn1Spec=decoderAsn1Spec)[0]
+            self.value = decoderFunction(v)
 
 class Certificate():
     '''
