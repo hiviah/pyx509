@@ -129,6 +129,9 @@ class PolicyConstraints(univ.Sequence):
                     univ.Integer().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0x1))),
                                          )    
 
+class NetscapeCertType(univ.BitString):
+    pass
+
 class ExtensionValue(univ.Choice):
     componentType = namedtype.NamedTypes(
                             namedtype.NamedType("subjectAltName", GeneralNames()),

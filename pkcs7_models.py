@@ -347,6 +347,14 @@ class PolicyConstraintsExt:
         if inhibitPolicyMapping is not None:
             self.inhibitPolicyMapping = inhibitPolicyMapping._value
         
+class NetscapeCertTypeExt:
+    def __init__(self, asn1_netscapeCertType):
+        #https://www.mozilla.org/projects/security/pki/nss/tech-notes/tn3.html
+        bits = asn1_netscapeCertType._value
+        self.clientCert = len(bits) > 0 and bool(bits[0])
+        self.serverCert = len(bits) > 1 and bool(bits[1])
+        self.caCert = len(bits) > 5 and bool(bits[5])
+        
 class Extension():
     '''
     Represents one Extension in X509v3 certificate
@@ -368,6 +376,7 @@ class Extension():
         "1.3.6.1.5.5.7.1.1": (AuthorityInfoAccess(),    lambda v: [AuthorityInfoAccessExt(s) for s in v]),
         "2.5.29.37": (ExtendedKeyUsage(),               lambda v: ExtendedKeyUsageExt(v)),
         "2.5.29.36": (PolicyConstraints(),              lambda v: PolicyConstraintsExt(v)),
+        "2.16.840.1.113730.1.1": (NetscapeCertType(),   lambda v: NetscapeCertTypeExt(v)),
     }
     
     def __init__(self, extension):
