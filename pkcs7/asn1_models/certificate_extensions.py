@@ -121,6 +121,14 @@ class Statements(univ.SequenceOf):
 class SubjectKeyId(univ.OctetString):
     pass
 
+class PolicyConstraints(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+                namedtype.OptionalNamedType("requireExplicitPolicy",
+                    univ.Integer().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0x0))),
+                namedtype.OptionalNamedType("inhibitPolicyMapping",
+                    univ.Integer().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0x1))),
+                                         )    
+
 class ExtensionValue(univ.Choice):
     componentType = namedtype.NamedTypes(
                             namedtype.NamedType("subjectAltName", GeneralNames()),

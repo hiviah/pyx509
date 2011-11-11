@@ -22,6 +22,7 @@ Created on Dec 11, 2009
 
 '''
 
+from pyasn1.error import PyAsn1Error
 from pkcs7.asn1_models.tools import *
 from pkcs7.asn1_models.oid import *
 from pkcs7.asn1_models.tools import *
@@ -30,29 +31,8 @@ from pkcs7.asn1_models.certificate_extensions import *
 from pkcs7.debug import *
 import datetime, time
 
-
-#class SignedData():    
-'''
-Represents SignedData object.
-Attributes:
-- version
-- digest_algorithms
-- message
-'''
-'''
-def __init__(self, signed_data):
-    self.version = signed_data.getComponentByName("version")        
-    self.digest_algorithms = self._extract_used_digest_algs(signed_data)
-    self.message = signed_data.getComponentByName("content").getComponentByName("signed_content").getContentValue()                 
-
-def _extract_used_digest_algs(self, signed_data):
-    used_digests = signed_data.getComponentByName("digestAlgs")
-    result = []
-    for used_digest in used_digests:           
-        algorithm_key = tuple_to_OID(used_digest.getComponentByName("algorithm")._value)
-        result.append(algorithm_key)  
-    return result
-'''
+class CertificateError(Exception):
+    pass
     
 class Name():
     '''
@@ -68,11 +48,9 @@ class Name():
                 type = str(attr.getComponentByPosition(0).getComponentByName('type'))                
                 value = str(attr.getComponentByPosition(0).getComponentByName('value'))
                 self.__attributes[type] = value 
-        self.__attributes.keys().sort()       
     
     def __str__(self):        
         result = ''
-        self.__attributes.keys().sort()
         for key in self.__attributes.keys():
             result += key
             result += ' => '
@@ -81,7 +59,6 @@ class Name():
         return result[:len(result)-1]
         
     def get_attributes(self):
-        self.__attributes.keys().sort()
         return self.__attributes.copy()
 
 class ValidityInterval():
@@ -356,6 +333,20 @@ class QcStatementExt():
         if self.statementInfo is not None:
             self.statementInfo = str(self.statementInfo)
         
+class PolicyConstraintsExt:
+    def __init__(self, asn1_policyConstraints):
+        self.requireExplicitPolicy = None
+        self.inhibitPolicyMapping = None
+        
+        requireExplicitPolicy = asn1_policyConstraints.getComponentByName("requireExplicitPolicy")
+        inhibitPolicyMapping = asn1_policyConstraints.getComponentByName("inhibitPolicyMapping")
+        
+        if requireExplicitPolicy is not None:
+            self.requireExplicitPolicy = requireExplicitPolicy._value
+        
+        if inhibitPolicyMapping is not None:
+            self.inhibitPolicyMapping = inhibitPolicyMapping._value
+        
 class Extension():
     '''
     Represents one Extension in X509v3 certificate
@@ -376,6 +367,7 @@ class Extension():
         "1.3.6.1.5.5.7.1.3": (Statements(),             lambda v: [QcStatementExt(s) for s in v]),
         "1.3.6.1.5.5.7.1.1": (AuthorityInfoAccess(),    lambda v: [AuthorityInfoAccessExt(s) for s in v]),
         "2.5.29.37": (ExtendedKeyUsage(),               lambda v: ExtendedKeyUsageExt(v)),
+        "2.5.29.36": (PolicyConstraints(),              lambda v: PolicyConstraintsExt(v)),
     }
     
     def __init__(self, extension):
@@ -389,9 +381,17 @@ class Extension():
         # if we know the type of value, parse it
         decoderTuple = Extension._extensionDecoders.get(self.id)
         if decoderTuple is not None:
-            (decoderAsn1Spec, decoderFunction) = decoderTuple
-            v = decoder.decode(self.value, asn1Spec=decoderAsn1Spec)[0]
-            self.value = decoderFunction(v)
+            try:
+                (decoderAsn1Spec, decoderFunction) = decoderTuple
+                v = decoder.decode(self.value, asn1Spec=decoderAsn1Spec)[0]
+                self.value = decoderFunction(v)
+            except PyAsn1Error:
+                #according to RFC 2459, unrecognized extension can be ignored
+                #unless marked critical
+                if self.is_critical:
+                    raise
+        elif self.is_critical:
+            raise CertificateError("Critical extension OID %s not understood" % self.id)
 
 class Certificate():
     '''
