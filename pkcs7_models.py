@@ -37,26 +37,64 @@ class CertificateError(Exception):
 class Name():
     '''
     Represents Name (structured, tagged).
-    This is a dictionary. Keys are types of names (their OIDs), value is the value.
-    String representation: "1.2.3.5=>CZ, 2.3.6.5=>Ceska posta..."
-    Oids are in oid_map, in module oid
+    This is a dictionary. Keys are types of names (mapped from OID to name if
+    known, see _oid2Name below, otherwise numeric). Values are arrays containing
+    the names that mapped to given type (because having more values of one type,
+    e.g. multiple CNs is common).
     '''
+    _oid2Name = {
+        "2.5.4.3": "CN",
+        "2.5.4.6": "C",
+        "2.5.4.7": "L",
+        "2.5.4.8": "ST",
+        "2.5.4.10": "O",
+        "2.5.4.11": "OU",
+        
+        "2.5.4.45": "X500UID",
+        "1.2.840.113549.1.9.1": "email",
+        "2.5.4.17": "zip",
+        "2.5.4.9": "street",
+        "2.5.4.15": "businessCategory",
+        "2.5.4.5": "serialNumber",
+        "2.5.4.43": "initials",
+        "2.5.4.44": "generationQualifier",
+        "2.5.4.4": "surname",
+        "2.5.4.42": "givenName",
+        "2.5.4.12": "title",
+        "2.5.4.46": "dnQualifier",
+        "2.5.4.65": "pseudonym",
+        "0.9.2342.19200300.100.1.25": "DC",
+    }
+    
     def __init__(self, name):
         self.__attributes = {}
         for name_part in name:
             for attr in name_part:
                 type = str(attr.getComponentByPosition(0).getComponentByName('type'))                
                 value = str(attr.getComponentByPosition(0).getComponentByName('value'))
-                self.__attributes[type] = value 
+                
+                #use numeric OID form only if mapping is not known
+                typeStr = Name._oid2Name.get(type) or type
+                values = self.__attributes.get(typeStr)
+                if values is None:
+                    self.__attributes[typeStr] = [value]
+                else:
+                    values.append(value)
     
-    def __str__(self):        
-        result = ''
-        for key in self.__attributes.keys():
-            result += key
-            result += ' => '
-            result += self.__attributes[key]
-            result += ','
-        return result[:len(result)-1]
+    def __str__(self):
+        ''' Returns the Distinguished name as string. The string for the same
+        set of attributes is always the same.
+        '''
+        #There is no consensus whether RDNs in DN are ordered or not, this way
+        #we will have all sets having same components mapped to identical string.
+        valueStrings = []
+        for key in sorted(self.__attributes.keys()):
+            values = sorted(self.__attributes.get(key))
+            valuesStr = ", ".join(["%s=%s" % (key, value) for value in values])
+            valueStrings.append(valuesStr)
+        
+        return ", ".join(valueStrings)
+            
         
     def get_attributes(self):
         return self.__attributes.copy()
