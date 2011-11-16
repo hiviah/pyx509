@@ -393,6 +393,25 @@ class NetscapeCertTypeExt:
         self.serverCert = len(bits) > 1 and bool(bits[1])
         self.caCert = len(bits) > 5 and bool(bits[5])
         
+class ExtensionType:
+    '''"Enum" of extensions we know how to parse.'''
+    SUBJ_ALT_NAME = "subjAltNameExt"
+    AUTH_KEY_ID = "authKeyIdExt"
+    SUBJ_KEY_ID = "subjKeyIdExt"
+    BASIC_CONSTRAINTS = "basicConstraintsExt"
+    KEY_USAGE = "keyUsageExt"
+    EXT_KEY_USAGE = "extKeyUsageExt"
+    CERT_POLICIES = "certPoliciesExt"
+    CRL_DIST_POINTS = "crlDistPointsExt"
+    STATEMENTS = "statemetsExt"
+    AUTH_INFO_ACCESS = "authInfoAccessExt"
+    POLICY_CONSTRAINTS = "policyConstraintsExt"
+    NETSCAPE_CERT_TYPE = "netscapeCertTypeExt"
+    
+class ExtensionTypes:
+    #hackish way to enumerate known extensions without writing them twice
+    knownExtensions = [name for (attr, name) in vars(ExtensionType).items() if attr.isupper()]
+    
 class Extension():
     '''
     Represents one Extension in X509v3 certificate
@@ -401,26 +420,27 @@ class Extension():
     - is_critical
     - value (value of extension, needs more parsing - it is in DER encoding)
     '''
-    #OID: (spec, valueConversionFunction)
+    #OID: (ASN1Spec, valueConversionFunction, attributeName)
     _extensionDecoders = {
-        "2.5.29.17": (GeneralNames(),                   lambda v: SubjectAltNameExt(v)),
-        "2.5.29.35": (KeyId(),                          lambda v: AuthorityKeyIdExt(v)),
-        "2.5.29.14": (SubjectKeyId(),                   lambda v: SubjectKeyIdExt(v)),
-        "2.5.29.19": (BasicConstraints(),               lambda v: BasicConstraintsExt(v)),
-        "2.5.29.15": (None,                             lambda v: KeyUsageExt(v)),
-        "2.5.29.32": (CertificatePolicies(),            lambda v: [CertificatePolicyExt(p) for p in v]),
-        "2.5.29.31": (CRLDistributionPoints(),          lambda v: [CRLdistPointExt(p) for p in v]),
-        "1.3.6.1.5.5.7.1.3": (Statements(),             lambda v: [QcStatementExt(s) for s in v]),
-        "1.3.6.1.5.5.7.1.1": (AuthorityInfoAccess(),    lambda v: [AuthorityInfoAccessExt(s) for s in v]),
-        "2.5.29.37": (ExtendedKeyUsage(),               lambda v: ExtendedKeyUsageExt(v)),
-        "2.5.29.36": (PolicyConstraints(),              lambda v: PolicyConstraintsExt(v)),
-        "2.16.840.1.113730.1.1": (NetscapeCertType(),   lambda v: NetscapeCertTypeExt(v)),
+        "2.5.29.17": (GeneralNames(),                 lambda v: SubjectAltNameExt(v),                 ExtensionType.SUBJ_ALT_NAME),
+        "2.5.29.35": (KeyId(),                        lambda v: AuthorityKeyIdExt(v),                 ExtensionType.AUTH_KEY_ID),
+        "2.5.29.14": (SubjectKeyId(),                 lambda v: SubjectKeyIdExt(v),                   ExtensionType.SUBJ_KEY_ID),
+        "2.5.29.19": (BasicConstraints(),             lambda v: BasicConstraintsExt(v),               ExtensionType.BASIC_CONSTRAINTS),
+        "2.5.29.15": (None,                           lambda v: KeyUsageExt(v),                       ExtensionType.KEY_USAGE),
+        "2.5.29.32": (CertificatePolicies(),          lambda v: [CertificatePolicyExt(p) for p in v], ExtensionType.CERT_POLICIES),
+        "2.5.29.31": (CRLDistributionPoints(),        lambda v: [CRLdistPointExt(p) for p in v],      ExtensionType.CRL_DIST_POINTS),
+        "1.3.6.1.5.5.7.1.3": (Statements(),           lambda v: [QcStatementExt(s) for s in v],       ExtensionType.STATEMENTS),
+        "1.3.6.1.5.5.7.1.1": (AuthorityInfoAccess(),  lambda v: [AuthorityInfoAccessExt(s) for s in v], ExtensionType.AUTH_INFO_ACCESS),
+        "2.5.29.37": (ExtendedKeyUsage(),             lambda v: ExtendedKeyUsageExt(v),               ExtensionType.EXT_KEY_USAGE),
+        "2.5.29.36": (PolicyConstraints(),            lambda v: PolicyConstraintsExt(v),              ExtensionType.POLICY_CONSTRAINTS),
+        "2.16.840.1.113730.1.1": (NetscapeCertType(), lambda v: NetscapeCertTypeExt(v),               ExtensionType.NETSCAPE_CERT_TYPE),
     }
     
     def __init__(self, extension):
         self.id = tuple_to_OID(extension.getComponentByName("extnID"))
         critical = extension.getComponentByName("critical")
         self.is_critical = (critical != 0)
+        self.ext_type = None
         
         # set the bytes as the extension value
         self.value = extension.getComponentByName("extnValue")._value
@@ -429,9 +449,10 @@ class Extension():
         decoderTuple = Extension._extensionDecoders.get(self.id)
         if decoderTuple is not None:
             try:
-                (decoderAsn1Spec, decoderFunction) = decoderTuple
+                (decoderAsn1Spec, decoderFunction, extType) = decoderTuple
                 v = decoder.decode(self.value, asn1Spec=decoderAsn1Spec)[0]
                 self.value = decoderFunction(v)
+                self.ext_type = extType
             except PyAsn1Error:
                 #according to RFC 2459, unrecognized extension can be ignored
                 #unless marked critical
@@ -476,7 +497,14 @@ class Certificate():
         else:
             self.subject_uid = None
             
-        self.extensions = self._create_extensions_list(tbsCertificate.getComponentByName('extensions'))        
+        self.extensions = self._create_extensions_list(tbsCertificate.getComponentByName('extensions'))
+        
+        #make known extensions accessible through attributes
+        for extAttrName in ExtensionTypes.knownExtensions:
+            setattr(self, extAttrName, None)
+        for ext in self.extensions:
+            if ext.ext_type:
+                setattr(self, ext.ext_type, ext)
     
     def _create_extensions_list(self, extensions):
         from pyasn1.type import tag,namedtype,namedval,univ,constraint,char,useful
@@ -485,12 +513,8 @@ class Certificate():
             
         if extensions is None:
             return []
-        result = []
-        for extension in extensions:
-            ext = Extension(extension)
-            result.append(ext)
-          
-        return result
+        
+        return [Extension(ext) for ext in extensions]
     
 class X509Certificate():
     '''
