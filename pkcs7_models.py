@@ -107,8 +107,10 @@ class ValidityInterval():
     -valid_to
     '''
     def __init__(self, validity):
-        self.valid_from = validity.getComponentByName("notBefore").getComponent()._value
-        self.valid_to = validity.getComponentByName("notAfter").getComponent()._value
+        self.valid_from = self._getGeneralizedTime(
+            validity.getComponentByName("notBefore"))
+        self.valid_to = self._getGeneralizedTime(
+            validity.getComponentByName("notAfter"))
         
     def get_valid_from_as_datetime(self):
       return self.parse_date(self.valid_from)
@@ -116,22 +118,37 @@ class ValidityInterval():
     def get_valid_to_as_datetime(self):
       return self.parse_date(self.valid_to)
        
+    @staticmethod
+    def _getGeneralizedTime(timeComponent):
+        """Return time from Time component in YYYYMMDDHHMMSSZ format"""
+        if timeComponent.getName() == "generalTime": #from pkcs7.asn1_models.X509_certificate.Time
+            #already in YYYYMMDDHHMMSSZ format
+            return timeComponent.getComponent()._value
+        else: #utcTime
+            #YYMMDDHHMMSSZ format
+            #UTCTime has only short year format (last two digits), so add
+            #19 or 20 to make it "full" year; by RFC 2459 it's range 1950..2049
+            timeValue = timeComponent.getComponent()._value
+            shortyear = int(timeValue[:2])
+            return (shortyear >= 50 and "19" or "20") + timeValue
+            
     @classmethod
     def parse_date(cls, date):
-      """
-      parses date string and returns a datetime object;
-      it also adjusts the time according to local timezone, so that it is
-      compatible with other parts of the library
-      """
-      year = 2000 + int(date[:2])
-      month = int(date[2:4])
-      day = int(date[4:6])
-      hour = int(date[6:8])
-      minute = int(date[8:10])
-      second = int(date[10:12])
-      tz_delta = datetime.timedelta(seconds=time.daylight and time.altzone
-                                    or time.timezone)
-      return datetime.datetime(year, month, day, hour, minute, second) - tz_delta
+        """
+        parses date string and returns a datetime object;
+        """
+        year = int(date[:4])
+        month = int(date[4:6])
+        day = int(date[6:8])
+        hour = int(date[8:10])
+        minute = int(date[10:12])
+        try:
+            #seconds must be present per RFC 2459, but some braindead certs
+            #omit it
+            second = int(date[12:14])
+        except (ValueError, IndexError):
+            second = 0
+        return datetime.datetime(year, month, day, hour, minute, second)
 
 class PublicKeyInfo():
     '''
@@ -157,12 +174,15 @@ class PublicKeyInfo():
         if self.alg == "1.2.840.113549.1.1.1":
             self.key = get_RSA_pub_key_material(bitstr_key)
             self.algType = PublicKeyInfo.RSA
+            self.algName = "RSA"
         elif self.alg == "1.2.840.10040.4.1":
             self.key = get_DSA_pub_key_material(bitstr_key, parameters)
             self.algType = PublicKeyInfo.DSA
+            self.algName = "DSA"
         else:
             self.key = {}
             self.algType = PublicKeyInfo.UNKNOWN
+            self.algName = self.alg
 
 class SubjectAltNameExt():
     '''
@@ -170,10 +190,11 @@ class SubjectAltNameExt():
     '''
     def __init__(self, asn1_subjectAltName):
         self.names = []
-        #gen_names = asn1_subjectAltName.getComponentByName("subjectAltName")
+        #only parsing out DNS names, others (like IP address) are omitted
         for gname in asn1_subjectAltName:
-            #self.names.append(gname.getComponent()._value)
-            self.names.append(str(gname.getComponent()))
+            dNSName = gname.getComponentByName("dNSName")
+            if dNSName:
+                self.names.append(str(dNSName))
 
 class BasicConstraintsExt():
     '''
@@ -181,7 +202,7 @@ class BasicConstraintsExt():
     '''
     def __init__(self, asn1_bConstraints):
         self.ca = bool(asn1_bConstraints.getComponentByName("ca")._value)
-        self.max_path_len = 0
+        self.max_path_len = None
         if asn1_bConstraints.getComponentByName("pathLen") is not None:
             self.max_path_len = asn1_bConstraints.getComponentByName("pathLen")._value
         
@@ -347,7 +368,8 @@ class CRLdistPointExt():
     def __init__(self, asn1_crl_dp):
         dp = asn1_crl_dp.getComponentByName("distPoint")
         if dp is not None:
-            self.dist_point = str(dp.getComponent())
+            #self.dist_point = str(dp.getComponent())
+            self.dist_point = str(dp.getComponentByName("fullName")[0].getComponent())
         else:
             self.dist_point = None
         reasons = asn1_crl_dp.getComponentByName("reasons")
@@ -524,6 +546,7 @@ class X509Certificate():
     - signature
     - tbsCertificate (the certificate)
     '''
+    
     def __init__(self, certificate):
         self.signature_algorithm = str(certificate.getComponentByName("signatureAlgorithm"))
         self.signature = certificate.getComponentByName("signatureValue").toOctets()     
