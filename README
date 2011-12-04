@@ -1,0 +1,40 @@
+X.509 Certificate Parser for Python
+
+This is probably the most complete parser of X.509 certificates in python.
+Requires pyasn1, the newer, the better. pyasn1 >= 0.1.1 recommended.
+
+Code is in alpha stage! Don't use for anything sensitive. I wrote it (based on
+previous work of colleagues) since there is no comprehensive python parser for
+X.509 certificates. Often python programmers had to parse openssl output.
+
+Advantages:
+
+- I find it less painful to use than parsing output of 'openssl x509'
+- I know its quirks, tested on 1.1 million certificates, compared with openssl,
+  dumasn1 and other clients
+
+Disadvantages:
+
+- it's slow compared to openssl (about 2.3x compared to RHEL's openssl-1.0-fips)
+- currently not very strict in what string types in RDNs it accepts
+- API is still rather ugly and has no documentation yet; code is nasty at some
+  places
+- stricter in extension parsing compared to openssl (at least some cases I
+  encountered)
+
+Known bugs:
+
+- subject alternative name now only shows DNS names (other types are ignored)
+- some extensions are not shown very nicely when put in string format
+- not all extensions are supported (e.g. policy constraints and name constraints
+  are missing)
+- badly formed extensions are ignored if not marked critical
+  - easy to switch to more strict behavior
+  - other clients do this as well though I'm not sure RFC 5280 specifies what
+    should happen if client understands extension, but is formatted not
+    according to spec
+- suffers from two pyasn1 bugs (pyasn1 needs to be patched):
+  - boolean encoded in value other than 0 or 0xff is considered invalid
+  - OID encoding suffers from "leading zero" attack (see the Kaminsky's 0x80 bug
+    - http://www.ioactive.com/pdfs/PKILayerCake.pdf)
+
