@@ -10,8 +10,7 @@ X.509 certificates. Often python programmers had to parse openssl output.
 Advantages:
 
 - I find it less painful to use than parsing output of 'openssl x509'
-- I know its quirks, tested on 1.1 million certificates, compared with openssl,
-  dumasn1 and other clients
+- somewhat stricter in extension parsing compared to openssl
 
 Disadvantages:
 
@@ -19,15 +18,14 @@ Disadvantages:
 - currently not very strict in what string types in RDNs it accepts
 - API is still rather ugly and has no documentation yet; code is nasty at some
   places
-- stricter in extension parsing compared to openssl (at least some cases I
-  encountered)
 
-Known bugs:
+Known bugs and quirks:
 
 - subject alternative name now only shows DNS names (other types are ignored)
 - some extensions are not shown very nicely when put in string format
-- not all extensions are supported (e.g. policy constraints and name constraints
-  are missing)
+- not all extensions are supported (e.g. name constraints)
+- string types accepted for various RDN subelements are rather too permissive
+- RDN string conversion does not conform to RFC 2253
 - badly formed extensions are ignored if not marked critical
   - easy to switch to more strict behavior
   - other clients do this as well though I'm not sure RFC 5280 specifies what
