@@ -31,7 +31,7 @@ Known bugs and quirks:
   - other clients do this as well though I'm not sure RFC 5280 specifies what
     should happen if client understands extension, but is formatted not
     according to spec
-- suffers from two pyasn1 bugs (pyasn1 needs to be patched):
+- suffers from two pyasn1 bugs (see "patches" directory):
   - boolean encoded in value other than 0 or 0xff is considered invalid
   - OID encoding suffers from "leading zero" attack (see the Kaminsky's 0x80 bug
     - http://www.ioactive.com/pdfs/PKILayerCake.pdf)
