@@ -1,0 +1,16 @@
+Index: pyasn1/codec/ber/decoder.py
+===================================================================
+RCS file: /cvsroot/pyasn1/pyasn1/pyasn1/codec/ber/decoder.py,v
+retrieving revision 1.43
+diff -u -r1.43 decoder.py
+--- pyasn1/codec/ber/decoder.py	8 Nov 2011 15:46:12 -0000	1.43
++++ pyasn1/codec/ber/decoder.py	2 Feb 2012 14:56:46 -0000
+@@ -213,6 +213,8 @@
+             if subId < 128:
+                 oid = oid + (subId,)
+                 index = index + 1
++            elif subId == 128:
++                raise error.PyAsn1Error('Invalid OID encoding - leading zero')
+             else:
+                 # Construct subid from a number of octets
+                 nextSubId = subId

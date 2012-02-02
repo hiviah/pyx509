@@ -1,0 +1,24 @@
+Index: pyasn1/codec/cer/decoder.py
+===================================================================
+RCS file: /cvsroot/pyasn1/pyasn1/pyasn1/codec/cer/decoder.py,v
+retrieving revision 1.8
+diff -u -r1.8 decoder.py
+--- pyasn1/codec/cer/decoder.py	4 Oct 2011 11:16:59 -0000	1.8
++++ pyasn1/codec/cer/decoder.py	2 Feb 2012 14:57:14 -0000
+@@ -12,12 +12,12 @@
+         if not substrate:
+             raise error.PyAsn1Error('Empty substrate')
+         byte = oct2int(substrate[0])
+-        if byte == 0xff:
+-            value = 1
+-        elif byte == 0x00:
++        #This will probably break the codec.der.encoder.encode(parsed_cert) == cert_bytes
++        #invariant, but I can live with that.
++        if byte == 0:
+             value = 0
+         else:
+-            raise error.PyAsn1Error('Boolean CER violation: %s' % byte)
++            value = 1
+         return self._createComponent(asn1Spec, tagSet, value), substrate[1:]
+ 
+ tagMap = decoder.tagMap.copy()
