@@ -1,6 +1,6 @@
 from certs import cert_finder
 
-#*    dslib - Python library for Datove schranky
+#*    pyx509 - Python library for parsing X.509
 #*    Copyright (C) 2009-2010  CZ.NIC, z.s.p.o. (http://www.nic.cz)
 #*
 #*    This library is free software; you can redistribute it and/or

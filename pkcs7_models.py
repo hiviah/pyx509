@@ -1,6 +1,6 @@
 
-#*    dslib - Python library for Datove schranky
-#*    Copyright (C) 2009-2010  CZ.NIC, z.s.p.o. (http://www.nic.cz)
+#*    pyx509 - Python library for parsing X.509
+#*    Copyright (C) 2009-2012  CZ.NIC, z.s.p.o. (http://www.nic.cz)
 #*
 #*    This library is free software; you can redistribute it and/or
 #*    modify it under the terms of the GNU Library General Public
