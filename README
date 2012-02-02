@@ -17,7 +17,7 @@ Disadvantages:
 - it's slow compared to openssl (about 2.3x compared to RHEL's openssl-1.0-fips)
 - currently not very strict in what string types in RDNs it accepts
 - API is still rather ugly and has no documentation yet; code is nasty at some
-  places
+  places (and there's some old dangling code like pkcs7/verifier.py)
 
 Known bugs and quirks:
 
