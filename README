@@ -22,8 +22,9 @@ Disadvantages:
 Known bugs and quirks:
 
 - subject alternative name now only shows DNS names (other types are ignored)
+- name constraints don't distinguish among various GeneralName subtypes
 - some extensions are not shown very nicely when put in string format
-- not all extensions are supported (e.g. name constraints)
+- not all extensions are supported
 - string types accepted for various RDN subelements are rather too permissive
 - RDN string conversion does not conform to RFC 2253
 - badly formed extensions are ignored if not marked critical

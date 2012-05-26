@@ -327,6 +327,7 @@ class CertificatePolicyExt():
     '''
     def __init__(self, asn1_certPol):
         self.id = tuple_to_OID(asn1_certPol.getComponentByName("policyIdentifier"))
+        self.qualifiers = []
         if (asn1_certPol.getComponentByName("policyQualifiers")):
             qualifiers = asn1_certPol.getComponentByName("policyQualifiers")
             self.qualifiers = [PolicyQualifier(pq) for pq in qualifiers]
@@ -407,6 +408,53 @@ class PolicyConstraintsExt:
         if inhibitPolicyMapping is not None:
             self.inhibitPolicyMapping = inhibitPolicyMapping._value
         
+class NameConstraint:
+    def __init__(self, base, minimum, maximum):
+        self.base = base
+        self.minimum = minimum
+        self.maximum = maximum
+    
+    def __repr__(self):
+        return "NameConstraint(base: %s, min: %s, max: %s)" % (repr(self.base), self.minimum, self.maximum)
+
+    def __str__(self):
+        return self.__repr__()
+
+class NameConstraintsExt:
+    def __init__(self, asn1_nameConstraints):
+        self.permittedSubtrees = []
+        self.excludedSubtrees = []
+        
+        permittedSubtrees = asn1_nameConstraints.getComponentByName("permittedSubtrees")
+        excludedSubtrees = asn1_nameConstraints.getComponentByName("excludedSubtrees")
+        
+        self.permittedSubtrees = self._parseSubtree(permittedSubtrees)
+        self.excludedSubtrees = self._parseSubtree(excludedSubtrees)
+    
+    def _parseSubtree(self, asn1Subtree):
+        if asn1Subtree is None:
+            return []
+            
+        subtreeList = []
+        
+        for subtree in asn1Subtree:
+            #TODO: somehow extract the fucking type of GeneralName
+            base = subtree.getComponentByName("base").getComponent()#ByName("dNSName")
+            if base is None:
+                continue
+            
+            base = str(base)
+            
+            minimum = subtree.getComponentByName("minimum")._value
+            maximum = subtree.getComponentByName("maximum")
+            if maximum is not None:
+                maximum = maximum._value
+            
+            subtreeList.append(NameConstraint(base, minimum, maximum))
+            
+        return subtreeList
+        
+        
 class NetscapeCertTypeExt:
     def __init__(self, asn1_netscapeCertType):
         #https://www.mozilla.org/projects/security/pki/nss/tech-notes/tn3.html
@@ -428,6 +476,7 @@ class ExtensionType:
     STATEMENTS = "statemetsExt"
     AUTH_INFO_ACCESS = "authInfoAccessExt"
     POLICY_CONSTRAINTS = "policyConstraintsExt"
+    NAME_CONSTRAINTS = "nameConstraintsExt"
     NETSCAPE_CERT_TYPE = "netscapeCertTypeExt"
     
 class ExtensionTypes:
@@ -455,6 +504,7 @@ class Extension():
         "1.3.6.1.5.5.7.1.1": (AuthorityInfoAccess(),  lambda v: [AuthorityInfoAccessExt(s) for s in v], ExtensionType.AUTH_INFO_ACCESS),
         "2.5.29.37": (ExtendedKeyUsage(),             lambda v: ExtendedKeyUsageExt(v),               ExtensionType.EXT_KEY_USAGE),
         "2.5.29.36": (PolicyConstraints(),            lambda v: PolicyConstraintsExt(v),              ExtensionType.POLICY_CONSTRAINTS),
+        "2.5.29.30": (NameConstraints(),              lambda v: NameConstraintsExt(v),                ExtensionType.NAME_CONSTRAINTS),
         "2.16.840.1.113730.1.1": (NetscapeCertType(), lambda v: NetscapeCertTypeExt(v),               ExtensionType.NETSCAPE_CERT_TYPE),
     }
     

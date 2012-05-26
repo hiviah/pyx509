@@ -129,6 +129,26 @@ class PolicyConstraints(univ.Sequence):
                     univ.Integer().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0x1))),
                                          )    
 
+class GeneralSubtree(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+                namedtype.NamedType("base", GeneralName()),
+                namedtype.DefaultedNamedType("minimum",
+                    univ.Integer(0).subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0x0))),
+                namedtype.OptionalNamedType("maximum",
+                    univ.Integer().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0x1))),
+                                        )
+
+class GeneralSubtrees(univ.SequenceOf):
+    componentType = GeneralSubtree()
+
+class NameConstraints(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+                namedtype.OptionalNamedType("permittedSubtrees",
+                    GeneralSubtrees().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0x0))),
+                namedtype.OptionalNamedType("excludedSubtrees",
+                    GeneralSubtrees().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0x1))),
+                                         )
+
 class NetscapeCertType(univ.BitString):
     pass
 

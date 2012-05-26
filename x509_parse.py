@@ -153,5 +153,15 @@ if __name__ == "__main__":
 		ski = tbs.subjKeyIdExt.value
 		print "\t\tkey id", hexlify(ski.subject_key_id)
 
+	if tbs.nameConstraintsExt:
+		nce = tbs.nameConstraintsExt.value
+		print "\tName constraints: is_critical:", tbs.nameConstraintsExt.is_critical
+		
+		subtreeFmt = lambda subtrees: ", ".join([str(x) for x in subtrees])
+		if nce.permittedSubtrees:
+			print "\t\tPermitted:", subtreeFmt(nce.permittedSubtrees)
+		if nce.excludedSubtrees:
+			print "\t\tExcluded:", subtreeFmt(nce.excludedSubtrees)
+
 	print "Signature:", hexlify(x509cert.signature)
 		
