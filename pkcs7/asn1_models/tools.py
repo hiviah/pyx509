@@ -21,7 +21,7 @@ Some useful tools for working with ASN1 components.
 '''
 
 # dslib imports
-from pyasn1.codec.der import decoder
+from decoder_workarounds import decode
 from pyasn1 import error
 
 # local imports
@@ -52,7 +52,7 @@ def get_RSA_pub_key_material(subjectPublicKeyAsn1):
     # convert ASN1 subjectPublicKey component from BITSTRING to octets
     pubkey = subjectPublicKeyAsn1.toOctets()
     
-    key = decoder.decode(pubkey, asn1Spec=rsa_key)[0]
+    key = decode(pubkey, asn1Spec=rsa_key)[0]
     
     mod = key.getComponentByName("modulus")._value
     exp = key.getComponentByName("exp")._value
@@ -67,8 +67,8 @@ def get_DSA_pub_key_material(subjectPublicKeyAsn1, parametersAsn1):
     '''
     pubkey = subjectPublicKeyAsn1.toOctets()
     
-    key = decoder.decode(pubkey, asn1Spec=DsaPubKey())[0]
-    parameters = decoder.decode(str(parametersAsn1), asn1Spec=DssParams())[0]
+    key = decode(pubkey, asn1Spec=DsaPubKey())[0]
+    parameters = decode(str(parametersAsn1), asn1Spec=DssParams())[0]
     paramDict = {"pub": int(key)}
     
     for param in ['p', 'q', 'g']:

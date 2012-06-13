@@ -29,6 +29,7 @@ from pkcs7.asn1_models.tools import *
 from pkcs7.asn1_models.X509_certificate import *
 from pkcs7.asn1_models.certificate_extensions import *
 from pkcs7.debug import *
+from pkcs7.asn1_models.decoder_workarounds import decode
 import datetime, time
 
 class CertificateError(Exception):
@@ -522,7 +523,7 @@ class Extension():
         if decoderTuple is not None:
             try:
                 (decoderAsn1Spec, decoderFunction, extType) = decoderTuple
-                v = decoder.decode(self.value, asn1Spec=decoderAsn1Spec)[0]
+                v = decode(self.value, asn1Spec=decoderAsn1Spec)[0]
                 self.value = decoderFunction(v)
                 self.ext_type = extType
             except PyAsn1Error:
@@ -579,10 +580,6 @@ class Certificate():
                 setattr(self, ext.ext_type, ext)
     
     def _create_extensions_list(self, extensions):
-        from pyasn1.type import tag,namedtype,namedval,univ,constraint,char,useful
-        from pyasn1.codec.der import decoder, encoder
-        from pyasn1 import error
-            
         if extensions is None:
             return []
         
