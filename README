@@ -1,7 +1,9 @@
 X.509 Certificate Parser for Python
 
 This is probably the most complete parser of X.509 certificates in python.
-Requires pyasn1, the newer, the better. pyasn1 >= 0.1.1 recommended.
+
+Requirements:
+pyasn1 >= 0.1.4rc6 (or 0.1.4 once it is released)
 
 Code is in alpha stage! Don't use for anything sensitive. I wrote it (based on
 previous work of colleagues) since there is no comprehensive python parser for
@@ -29,11 +31,7 @@ Known bugs and quirks:
 - RDN string conversion does not conform to RFC 2253
 - badly formed extensions are ignored if not marked critical
   - easy to switch to more strict behavior
-  - other clients do this as well though I'm not sure RFC 5280 specifies what
-    should happen if client understands extension, but is formatted not
-    according to spec
-- suffers from two pyasn1 bugs (see "patches" directory):
-  - boolean encoded in value other than 0 or 0xff is considered invalid
-  - OID encoding suffers from "leading zero" attack (see the Kaminsky's 0x80 bug
-    - http://www.ioactive.com/pdfs/PKILayerCake.pdf)
+  - other clients do this as well; RFC 5280 specifies behavior for unknown
+    elements in extensions in appendix B.1, but does not cover all cases (e.g.
+    element exists, but with string type different from spec)
 
