@@ -28,7 +28,7 @@ Known bugs and quirks:
 - some extensions are not shown very nicely when put in string format
 - not all extensions are supported
 - string types accepted for various RDN subelements are rather too permissive
-- RDN string conversion does not conform to RFC 2253
+- RDN string conversion does not conform to RFC 4514
 - badly formed extensions are ignored if not marked critical
   - easy to switch to more strict behavior
   - other clients do this as well; RFC 5280 specifies behavior for unknown

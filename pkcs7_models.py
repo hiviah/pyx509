@@ -128,7 +128,7 @@ class ValidityInterval():
         else: #utcTime
             #YYMMDDHHMMSSZ format
             #UTCTime has only short year format (last two digits), so add
-            #19 or 20 to make it "full" year; by RFC 2459 it's range 1950..2049
+            #19 or 20 to make it "full" year; by RFC 5280 it's range 1950..2049
             timeValue = timeComponent.getComponent()._value
             shortyear = int(timeValue[:2])
             return (shortyear >= 50 and "19" or "20") + timeValue
@@ -144,7 +144,7 @@ class ValidityInterval():
         hour = int(date[8:10])
         minute = int(date[10:12])
         try:
-            #seconds must be present per RFC 2459, but some braindead certs
+            #seconds must be present per RFC 5280, but some braindead certs
             #omit it
             second = int(date[12:14])
         except (ValueError, IndexError):
@@ -304,7 +304,7 @@ class PolicyQualifier():
             
 class AuthorityInfoAccessExt():
     '''
-    Authority information access (AccessDescription in RFC 2459).
+    Authority information access.
     Instance variables:
     - id - accessMethod OID as string
     - access_location as string
@@ -527,8 +527,8 @@ class Extension():
                 self.value = decoderFunction(v)
                 self.ext_type = extType
             except PyAsn1Error:
-                #according to RFC 2459, unrecognized extension can be ignored
-                #unless marked critical
+                #According to RFC 5280, unrecognized extension can be ignored
+                #unless marked critical, though it doesn't cover all cases.
                 if self.is_critical:
                     raise
         elif self.is_critical:
