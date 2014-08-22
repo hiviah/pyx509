@@ -1,7 +1,0 @@
-README
-setup.py
-mod/pyx509.egg-info/PKG-INFO
-mod/pyx509.egg-info/SOURCES.txt
-mod/pyx509.egg-info/dependency_links.txt
-mod/pyx509.egg-info/requires.txt
-mod/pyx509.egg-info/top_level.txt
