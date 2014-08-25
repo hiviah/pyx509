@@ -15,7 +15,14 @@ setup(
     description = 'X.509 Certificate Parser for Python',
     url = 'https://github.com/hiviah/pyx509',
     classifiers = [
-        '',
+        'Development Status :: 3 - Alpha',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Topic :: Security',
     ],
     packages = find_packages(),
 )
