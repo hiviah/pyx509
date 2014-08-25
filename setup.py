@@ -14,6 +14,8 @@ setup(
     license = 'GPL',
     description = 'X.509 Certificate Parser for Python',
     url = 'https://github.com/hiviah/pyx509',
-    classifiers = 'alpha',
+    classifiers = [
+        '',
+    ],
     packages = find_packages(),
 )
