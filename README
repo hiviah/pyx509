@@ -3,7 +3,7 @@ X.509 Certificate Parser for Python
 This is probably the most complete parser of X.509 certificates in python.
 
 Requirements:
-pyasn1 >= 0.1.4rc6 (or 0.1.4 once it is released)
+pyasn1 >= 0.1.4
 
 Code is in alpha stage! Don't use for anything sensitive. I wrote it (based on
 previous work of colleagues) since there is no comprehensive python parser for
@@ -20,6 +20,13 @@ Disadvantages:
 - currently not very strict in what string types in RDNs it accepts
 - API is still rather ugly and has no documentation yet; code is nasty at some
   places (and there's some old dangling code like pkcs7/verifier.py)
+
+Parsing utility:
+
+There is testing utility that shows how to extract information from certificates
+programatically. It can be run from command line:
+
+    python pyx509/x509_parse.py path/to/certificate.der
 
 Known bugs and quirks:
 
