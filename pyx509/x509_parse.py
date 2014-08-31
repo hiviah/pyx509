@@ -36,7 +36,7 @@ def x509_parse(derData):
 #Sample usage showing retrieving certificate fields
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
-		printf >> sys.stderr, "Usage: x509_parse.py certificate.der"
+		print >> sys.stderr, "Usage: x509_parse.py certificate.der"
 		sys.exit(1)
 	
 	der_file = sys.argv[1]
