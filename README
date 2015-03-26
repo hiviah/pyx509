@@ -30,7 +30,6 @@ programatically. It can be run from command line:
 
 Known bugs and quirks:
 
-- subject alternative name now only shows DNS names (other types are ignored)
 - name constraints don't distinguish among various GeneralName subtypes
 - some extensions are not shown very nicely when put in string format
 - not all extensions are supported
