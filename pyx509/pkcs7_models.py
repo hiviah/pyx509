@@ -31,10 +31,13 @@ from pkcs7.asn1_models.certificate_extensions import *
 from pkcs7.debug import *
 from pkcs7.asn1_models.decoder_workarounds import decode
 import datetime, time
+import collections, struct
+
 
 class CertificateError(Exception):
     pass
     
+
 class Name():
     '''
     Represents Name (structured, tagged).
@@ -190,12 +193,33 @@ class SubjectAltNameExt():
     Subject alternative name extension.
     '''
     def __init__(self, asn1_subjectAltName):
-        self.names = []
-        #only parsing out DNS names, others (like IP address) are omitted
+        # Creates a dictionary for the component types found in
+        # SubjectAltName. Each dictionary entry is a list of names
+        self.values = collections.defaultdict(list)
         for gname in asn1_subjectAltName:
-            dNSName = gname.getComponentByName("dNSName")
-            if dNSName:
-                self.names.append(str(dNSName))
+            component_type = gname.getName()
+            if component_type == 'iPAddress':
+                name = self.mk_ip_addr(gname.getComponent())
+            else:
+                name = unicode(gname.getComponent())
+            self.values[component_type].append(name)
+
+    def mk_ip_addr(self, octets):
+        # Converts encoded ipv4 or ipv6 octents into printable strings.
+        octet_len = len(octets)
+        octets_as_ints = struct.unpack("B"*octet_len, str(octets))
+        if octet_len == 4:
+            octets_as_str = map(str, octets_as_ints)
+            return ".".join(octets_as_str)
+        else:
+            # IPV6 style addresses
+            # See http://tools.ietf.org/html/rfc2373#section-2.2
+            to_hex = lambda x: "%02X" % x
+            address_chunks = ["".join(map(to_hex, octets_as_ints[x:x+2]))
+                              for x in range(octet_len / 2)]
+            return ":".join(address_chunks)
+
+
 
 class BasicConstraintsExt():
     '''

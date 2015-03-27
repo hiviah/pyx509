@@ -146,7 +146,8 @@ if __name__ == "__main__":
 	if tbs.subjAltNameExt:
 		print "\tSubject Alternative Name: is_critical:", tbs.subjAltNameExt.is_critical
 		san = tbs.subjAltNameExt.value
-		print "\t\tDNS names:", ",".join(san.names) #only DNS names supported now
+		for component_type, name_list in san.values.items():
+			print "\t\t%s: %s" % (component_type, ",".join(name_list))
 		
 	if tbs.subjKeyIdExt:
 		print "\tSubject Key Id: is_critical:", tbs.subjKeyIdExt.is_critical
