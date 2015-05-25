@@ -164,5 +164,14 @@ if __name__ == "__main__":
 		if nce.excludedSubtrees:
 			print "\t\tExcluded:", subtreeFmt(nce.excludedSubtrees)
 
+	if tbs.sctListExt:
+		scte = tbs.sctListExt.value
+		print "\tSigned Certificate Timestamp List: is_critical:", tbs.sctListExt.is_critical
+		
+		for sct in scte.scts:
+		    print "\t\tSCT version %d, log ID %s, signed at %s" % (sct.version+1, hexlify(sct.logID), sct.timestamp)
+		    print "\t\t\tSignature info: hash alg id %d, signagure alg id %d" % (sct.hash_alg, sct.sig_alg)
+		    print "\t\t\tSignature:", hexlify(sct.signature)
+
 	print "Signature:", hexlify(x509cert.signature)
 		

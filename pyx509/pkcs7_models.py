@@ -488,6 +488,79 @@ class NetscapeCertTypeExt:
         self.serverCert = len(bits) > 1 and bool(bits[1])
         self.caCert = len(bits) > 5 and bool(bits[5])
         
+class SignedCertificateTimestamp:
+
+    def __init__(self, version, logID, timestamp, extensions, hash_alg, sig_alg, signature):
+        self.version = version
+        self.logID = logID
+        self.timestamp = timestamp
+        self.extensions = extensions
+        self.hash_alg = hash_alg
+        self.sig_alg = sig_alg
+        self.signature = signature
+
+class SCTListExt():
+    '''
+    SignedCertificateTimestampList extension for Certificate Transparency (RFC 6962)
+    '''
+    #Structure of SignedCertificateTimestampList from RFC 6962:
+    #
+    #    2 bytes size of sct_list
+    #        2 bytes SerializedSCT size
+    #            1 byte  sct_version
+    #           32 bytes log id
+    #            8 bytes timestamp - milliseconds from epoch
+    #            2 bytes extensions length
+    #                n bytes extension data
+    #            1 byte  hash algo
+    #            1 byte  signature algo
+    #            2 byte  signature length
+    #                n bytes signature
+
+    def __init__(self, asn1_sctList):
+        data = asn1_sctList._value
+        self.scts = []
+
+        # This parsing is ugly, but we can't use pyasn1 - 
+        # the data is serialized according to RFC 5246.
+        packed_len, data = self._splitBytes(data, 2)
+        total_len = struct.unpack("!H", packed_len)[0]
+        if len(data) != total_len:
+            raise ValueError("Malformed length of SCT list")
+        bytes_read = 0
+
+        while bytes_read < total_len:
+            packed_len, data = self._splitBytes(data, 2)
+            sct_len = struct.unpack("!H", packed_len)[0]
+
+            bytes_read += sct_len + 2
+            sct_data, data  = self._splitBytes(data, sct_len)
+            packed_vlt, sct_data = self._splitBytes(sct_data,  41)
+            version, logid, timestamp = struct.unpack("!B32sQ", packed_vlt)
+            timestamp = datetime.datetime.fromtimestamp(timestamp/1000.0)
+
+            packed_len, sct_data = self._splitBytes(sct_data, 2)
+            ext_len = struct.unpack("!H", packed_len)[0]
+            extensions, sct_data = self._splitBytes(sct_data, ext_len)
+
+            hash_alg, sig_alg, sig_len = struct.unpack("!BBH", sct_data[:4])
+            signature = sct_data[4:]
+            if len(signature) != sig_len:
+                raise ValueError("SCT signature has incorrect length, expected %d, got %d" % (sig_len, len(signature)))
+ 
+            self.scts.append(SignedCertificateTimestamp(version, logid, timestamp, extensions, hash_alg, sig_alg, signature))
+
+    @staticmethod
+    def _splitBytes(buf, count):
+        """ 
+        Split buf into two strings (part1, part2) where part1 has count bytes.
+        @raises ValueError if buf is too short.
+        """
+        if len(buf) < count:
+            raise ValueError("Malformed structure encountered when parsing SCT, expected %d bytes, got only %d" % (count, len(buf)))
+
+        return buf[:count], buf[count:]
+      
 class ExtensionType:
     '''"Enum" of extensions we know how to parse.'''
     SUBJ_ALT_NAME = "subjAltNameExt"
@@ -503,6 +576,7 @@ class ExtensionType:
     POLICY_CONSTRAINTS = "policyConstraintsExt"
     NAME_CONSTRAINTS = "nameConstraintsExt"
     NETSCAPE_CERT_TYPE = "netscapeCertTypeExt"
+    SCT_LIST = "sctListExt"
     
 class ExtensionTypes:
     #hackish way to enumerate known extensions without writing them twice
@@ -531,6 +605,7 @@ class Extension():
         "2.5.29.36": (PolicyConstraints(),            lambda v: PolicyConstraintsExt(v),              ExtensionType.POLICY_CONSTRAINTS),
         "2.5.29.30": (NameConstraints(),              lambda v: NameConstraintsExt(v),                ExtensionType.NAME_CONSTRAINTS),
         "2.16.840.1.113730.1.1": (NetscapeCertType(), lambda v: NetscapeCertTypeExt(v),               ExtensionType.NETSCAPE_CERT_TYPE),
+        "1.3.6.1.4.1.11129.2.4.2": (SCTList(),        lambda v: SCTListExt(v),                        ExtensionType.SCT_LIST),
     }
     
     def __init__(self, extension):

@@ -164,3 +164,7 @@ class ExtensionValue(univ.Choice):
                             namedtype.NamedType("subjectKeyId", KeyId()),
                                          )
 
+#SignedCertificateTimestampList extension is not in ASN.1, needs to be interpreted from RFC binary encoding
+class SCTList(univ.OctetString):
+    pass
+
