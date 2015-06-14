@@ -15,14 +15,14 @@
 #*    License along with this library; if not, write to the Free
 #*    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #*
-
+#!/usr/bin/env python
 import sys
 from binascii import hexlify
 
-from pkcs7.asn1_models.X509_certificate import Certificate
-from pkcs7_models import X509Certificate, PublicKeyInfo, ExtendedKeyUsageExt
+from pyx509.pkcs7.asn1_models.X509_certificate import Certificate
+from pyx509.pkcs7_models import X509Certificate, PublicKeyInfo, ExtendedKeyUsageExt
 
-from pkcs7.asn1_models.decoder_workarounds import decode
+from pyx509.pkcs7.asn1_models.decoder_workarounds import decode
 
 def x509_parse(derData):
 	"""Decodes certificate.
