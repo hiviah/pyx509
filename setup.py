@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 setup(
     name = 'pyx509',
     version = '0.6.0', # Would really like to link this to a tag/branch/whatever
-    equires = ['pyasn1 (>= 0.1.4)',],
+    install_requires = ['pyasn1>=0.1.4',],
     author = 'Ondrej Mikle',
     author_email = 'ondrej.mikle@gmail.com',
     license = 'GPL',
