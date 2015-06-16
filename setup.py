@@ -25,4 +25,5 @@ setup(
         'Topic :: Security',
     ],
     packages = find_packages(),
+    scripts = ['pyx509/x509_parse.py',],
 )
