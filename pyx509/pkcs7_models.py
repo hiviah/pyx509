@@ -201,7 +201,7 @@ class SubjectAltNameExt():
             if component_type == 'iPAddress':
                 name = self.mk_ip_addr(gname.getComponent())
             else:
-                name = unicode(gname.getComponent())
+                name = unicode(str(gname.getComponent()), 'utf-8')
             self.values[component_type].append(name)
 
     def mk_ip_addr(self, octets):
